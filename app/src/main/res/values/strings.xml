@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">GPIO Client</string>
+
+    <string name="menu_option_http">HTTP</string>
+    <string name="menu_option_ws">WebSocket</string>
+    <string name="menu_option_ble">Bluetooth LE</string>
+</resources>
