@@ -6,14 +6,15 @@ import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
 import com.dicosta.gpioclient.R;
 import com.dicosta.gpioclient.adapter.LightItemAdapter;
+import com.dicosta.gpioclient.contracts.LightsView;
 import com.dicosta.gpioclient.domain.Light;
+import com.dicosta.gpioclient.presenter.HTTPFragmentPresenter;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -22,13 +23,14 @@ import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.Unbinder;
 
-public class HTTPFragment extends Fragment {
+public class HTTPFragment extends Fragment implements LightsView {
 
     @BindView(R.id.lights_list)
     RecyclerView mLightsList;
 
     private Unbinder mUnbinder;
     private LightItemAdapter mLightItemAdapter;
+    private HTTPFragmentPresenter mPresenter;
 
     public HTTPFragment() {
         // Required empty public constructor
@@ -42,6 +44,8 @@ public class HTTPFragment extends Fragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        mPresenter = new HTTPFragmentPresenter(this);
     }
 
     @Override
@@ -59,27 +63,7 @@ public class HTTPFragment extends Fragment {
 
         mLightItemAdapter = new LightItemAdapter();
 
-        List<Light> list = new ArrayList<>();
-        for (int i = 0; i < 5; i++) {
-            Light newLight = new Light();
-
-            if (i == 1) {
-                newLight.setName("Red Light on Pin #1");
-                newLight.setState(Light.STATE_ON);
-            } else if (i == 2) {
-                newLight.setName("Light " + String.valueOf(i));
-                newLight.setState(Light.STATE_OFF);
-            } else if (i == 3) {
-                newLight.setName("Light " + String.valueOf(i));
-                newLight.setState(Light.STATE_BLINK);
-            } else {
-                newLight.setName("Light " + String.valueOf(i));
-                newLight.setState(Light.STATE_OFF);
-            }
-
-            list.add(newLight);
-        }
-        mLightItemAdapter.setItems(list);
+        mLightItemAdapter.setItems(new ArrayList<>());
 
         mLightsList.setLayoutManager(new LinearLayoutManager(this.getContext()));
         mLightsList.setAdapter(mLightItemAdapter);
@@ -87,22 +71,22 @@ public class HTTPFragment extends Fragment {
         mLightItemAdapter.setLightItemAdapterListener(new LightItemAdapter.LightItemAdapterListener() {
             @Override
             public void onSwitchTurnOnClicked(Light light) {
-                Log.d("LIGHT ADAPTER LISTENER", "turn on clicked");
+                mPresenter.turnLightOn(light.getId());
             }
 
             @Override
             public void onSwitchTurnOffClicked(Light light) {
-                Log.d("LIGHT ADAPTER LISTENER", "turn off clicked");
+                mPresenter.turnLightOff(light.getId());
             }
 
             @Override
             public void onStartBlinkClicked(Light light) {
-                Log.d("LIGHT ADAPTER LISTENER", "start blink clicked");
+                mPresenter.startLightBlink(light.getId());
             }
 
             @Override
             public void onStopBlinkClicked(Light light) {
-                Log.d("LIGHT ADAPTER LISTENER", "stop blink clicked");
+                mPresenter.stopLightBlink(light.getId());
             }
         });
     }
@@ -112,5 +96,10 @@ public class HTTPFragment extends Fragment {
         super.onDestroyView();
 
         mUnbinder.unbind();
+    }
+
+    @Override
+    public void setLights(List<Light> lightsList) {
+        mLightItemAdapter.setItems(lightsList);
     }
 }

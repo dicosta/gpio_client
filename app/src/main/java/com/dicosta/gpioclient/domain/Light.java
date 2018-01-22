@@ -2,6 +2,8 @@ package com.dicosta.gpioclient.domain;
 
 import android.support.annotation.StringDef;
 
+import com.google.gson.annotations.SerializedName;
+
 import java.lang.annotation.Retention;
 
 import static java.lang.annotation.RetentionPolicy.SOURCE;
@@ -11,8 +13,6 @@ import static java.lang.annotation.RetentionPolicy.SOURCE;
  */
 
 public class Light {
-
-
     @Retention(SOURCE)
     @StringDef({
             STATE_ON,
@@ -22,16 +22,32 @@ public class Light {
     })
     public @interface LightState {}
 
+    @Retention(SOURCE)
+    @StringDef({
+            COLOR_RED,
+            COLOR_YELLOW,
+            COLOR_GREEN
+    })
+    public @interface LightColor {}
+
+    public static final String COLOR_RED = "RED";
+    public static final String COLOR_YELLOW = "YELLOW";
+    public static final String COLOR_GREEN = "GREEN";
+
     public static final String STATE_ON = "ON";
     public static final String STATE_OFF = "OFF";
     public static final String STATE_DIM = "DIM";
     public static final String STATE_BLINK = "BLINK";
 
-
+    @SerializedName("id")
     private int id;
+    @SerializedName("dimmable")
     private boolean isDimmable;
+    @SerializedName("name")
     private @LightState String name;
-    private String color;
+    @SerializedName("color")
+    private @LightColor String color;
+    @SerializedName("state")
     private String state;
 
 
@@ -59,11 +75,11 @@ public class Light {
         this.name = name;
     }
 
-    public String getColor() {
+    public @LightColor String getColor() {
         return color;
     }
 
-    public void setColor(String color) {
+    public void setColor(@LightColor String color) {
         this.color = color;
     }
 

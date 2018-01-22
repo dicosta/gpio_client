@@ -36,6 +36,8 @@ public class LightItemAdapter extends RecyclerView.Adapter<RecyclerView.ViewHold
     public void setItems(List<Light> items) {
         mItems.clear();
         mItems.addAll(items);
+
+        notifyDataSetChanged(); //use diff util
     }
 
     public void setLightItemAdapterListener(LightItemAdapterListener listener) {
