@@ -10,4 +10,12 @@
     <string name="start_blink">Start Blink</string>
     <string name="stop_blink">Stop Blink</string>
 
+    <string name="start_scan">Start BLE Scan</string>
+
+    <string name="title_location_permission">Enable Location</string>
+    <string name="text_location_permission">Location Service is Required to Perform BLE Scans</string>
+    <string name="ok">Ok</string>
+
+
+
 </resources>

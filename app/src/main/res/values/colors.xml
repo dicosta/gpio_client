@@ -12,4 +12,9 @@
     <color name="divider">#BDBDBD</color>
 
     <color name="white">#FFFFFFFF</color>
+
+    <color name="rssi_good">#2e7d32</color>
+    <color name="rssi_medium">#f9a825</color>
+    <color name="rssi_bad">#c62828</color>
+
 </resources>

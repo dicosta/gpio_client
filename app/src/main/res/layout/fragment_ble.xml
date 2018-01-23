@@ -4,10 +4,9 @@
     android:layout_height="match_parent"
     tools:context="com.dicosta.gpioclient.view.BLEFragment">
 
-    <!-- TODO: Update blank fragment layout -->
-    <TextView
+    <FrameLayout
+        android:id="@+id/ble_container"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:text="BLE FRAGMENT" />
+        android:layout_height="match_parent"/>
 
 </FrameLayout>
