@@ -2,6 +2,7 @@ package com.dicosta.gpioclient.view;
 
 import android.Manifest;
 import android.bluetooth.BluetoothAdapter;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
@@ -21,6 +22,7 @@ import android.widget.Toast;
 
 import com.dicosta.gpioclient.R;
 import com.dicosta.gpioclient.adapter.ScanResultAdapter;
+import com.dicosta.gpioclient.contracts.BLEFlow;
 import com.dicosta.gpioclient.contracts.ScanView;
 import com.dicosta.gpioclient.presenter.BLEScanPresenter;
 import com.dicosta.gpioclient.viewmodel.ScanResultViewModel;
@@ -51,6 +53,7 @@ public class BLEScanFragment extends Fragment implements ScanView {
     private Unbinder mUnbinder;
     private BLEScanPresenter mBLEScanPresenter;
     private ScanResultAdapter mAdapter;
+    private BLEFlow mBLEFlow;
 
     public BLEScanFragment() {
     }
@@ -63,6 +66,10 @@ public class BLEScanFragment extends Fragment implements ScanView {
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        if (getParentFragment() != null && getParentFragment() instanceof BLEFlow) {
+            mBLEFlow = (BLEFlow)getParentFragment();
+        }
 
         mBLEScanPresenter = new BLEScanPresenter(this);
     }
@@ -85,7 +92,7 @@ public class BLEScanFragment extends Fragment implements ScanView {
         scanResultList.setAdapter(mAdapter);
 
         mAdapter.setOnScanResultClickListener(macAddress -> {
-            //replace fragment and connect to device
+            mBLEFlow.navigateToLightsList(macAddress);
         });
     }
 

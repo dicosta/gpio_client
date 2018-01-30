@@ -9,11 +9,12 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import com.dicosta.gpioclient.R;
+import com.dicosta.gpioclient.contracts.BLEFlow;
 
 import butterknife.ButterKnife;
 import butterknife.Unbinder;
 
-public class BLEFragment extends Fragment {
+public class BLEFragment extends Fragment implements BLEFlow {
 
     private Unbinder mUnbinder;
 
@@ -42,16 +43,27 @@ public class BLEFragment extends Fragment {
     @Override
     public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+        navigateToScan();
+    }
 
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        mUnbinder.unbind();
+    }
+
+    @Override
+    public void navigateToScan() {
         FragmentTransaction fragmentTransaction = getChildFragmentManager().beginTransaction();
         fragmentTransaction.replace(R.id.ble_container, BLEScanFragment.newInstance());
         fragmentTransaction.commit();
     }
 
     @Override
-    public void onDestroyView() {
-        super.onDestroyView();
+    public void navigateToLightsList(String macAddress) {
+        FragmentTransaction fragmentTransaction = getChildFragmentManager().beginTransaction();
+        fragmentTransaction.replace(R.id.ble_container, BLEDeviceFragment.newInstance(macAddress));
+        fragmentTransaction.commit();
 
-        mUnbinder.unbind();
     }
 }
