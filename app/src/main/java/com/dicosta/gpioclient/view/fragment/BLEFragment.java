@@ -1,4 +1,4 @@
-package com.dicosta.gpioclient.view;
+package com.dicosta.gpioclient.view.fragment;
 
 import android.os.Bundle;
 import android.support.annotation.Nullable;
@@ -10,20 +10,16 @@ import android.view.ViewGroup;
 
 import com.dicosta.gpioclient.R;
 import com.dicosta.gpioclient.contracts.BLEFlow;
+import com.dicosta.gpioclient.view.BLEDeviceFragment;
+import com.dicosta.gpioclient.view.BLEScanFragment;
 
-import butterknife.ButterKnife;
-import butterknife.Unbinder;
-
-public class BLEFragment extends Fragment implements BLEFlow {
-
-    private Unbinder mUnbinder;
+public class BLEFragment extends BaseFragment {
 
     public BLEFragment() {
     }
 
     public static BLEFragment newInstance() {
-        BLEFragment fragment = new BLEFragment();
-        return fragment;
+        return new BLEFragment();
     }
 
     @Override
@@ -34,10 +30,7 @@ public class BLEFragment extends Fragment implements BLEFlow {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.fragment_ble, container, false);
-        mUnbinder = ButterKnife.bind(this, view);
-
-        return view;
+        return inflater.inflate(R.layout.fragment_ble, container, false);
     }
 
     @Override
@@ -46,24 +39,21 @@ public class BLEFragment extends Fragment implements BLEFlow {
         navigateToScan();
     }
 
-    @Override
-    public void onDestroyView() {
-        super.onDestroyView();
-        mUnbinder.unbind();
-    }
-
-    @Override
     public void navigateToScan() {
+        replaceChildFragment(R.id.ble_container, BLEScanFragment.newInstance());
+        /*
         FragmentTransaction fragmentTransaction = getChildFragmentManager().beginTransaction();
         fragmentTransaction.replace(R.id.ble_container, BLEScanFragment.newInstance());
         fragmentTransaction.commit();
+        */
     }
 
-    @Override
+    /*
     public void navigateToLightsList(String macAddress) {
         FragmentTransaction fragmentTransaction = getChildFragmentManager().beginTransaction();
         fragmentTransaction.replace(R.id.ble_container, BLEDeviceFragment.newInstance(macAddress));
         fragmentTransaction.commit();
 
     }
+    */
 }

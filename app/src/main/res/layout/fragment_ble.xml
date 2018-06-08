@@ -2,7 +2,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="com.dicosta.gpioclient.view.BLEFragment">
+    tools:context="com.dicosta.gpioclient.view.fragment.BLEFragment">
 
     <FrameLayout
         android:id="@+id/ble_container"

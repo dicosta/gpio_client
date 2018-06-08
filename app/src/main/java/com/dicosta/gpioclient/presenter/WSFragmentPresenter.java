@@ -1,33 +1,28 @@
 package com.dicosta.gpioclient.presenter;
 
-import android.arch.lifecycle.Lifecycle;
-import android.arch.lifecycle.LifecycleObserver;
-import android.arch.lifecycle.LifecycleOwner;
-import android.arch.lifecycle.OnLifecycleEvent;
-import android.content.Context;
-import android.os.Handler;
-
-import com.dicosta.gpioclient.api.WSClient;
-import com.dicosta.gpioclient.contracts.LightsView;
 import com.dicosta.gpioclient.domain.Light;
+import com.dicosta.gpioclient.net.WSClient;
+import com.dicosta.gpioclient.view.WSView;
 
 import java.util.List;
+
+import javax.inject.Inject;
 
 
 /**
  * Created by diego on 22/01/18.
  */
 
-public class WSFragmentPresenter implements LifecycleObserver {
-    private LightsView mView;
+public class WSFragmentPresenter extends BasePresenter<WSView> {
+
     private WSClient mWSClient;
 
-    public WSFragmentPresenter(LightsView view) {
-        mView = view;
-        ((LifecycleOwner) view).getLifecycle().addObserver(this);
-        mWSClient = new WSClient();
-    }
+    @Inject
+    WSFragmentPresenter(WSView view, WSClient wsClient) {
+        super(view);
 
+        mWSClient = wsClient;
+    }
 
     public void turnLightOn(int pinNumber) {
         mWSClient.send(pinNumber, Light.STATE_ON);
@@ -45,28 +40,17 @@ public class WSFragmentPresenter implements LifecycleObserver {
         mWSClient.send(pinNumber, Light.STATE_OFF);
     }
 
-    @OnLifecycleEvent(Lifecycle.Event.ON_CREATE)
-    public void onCreate() {
-        //TODO: Preserve this connection between rotations in ViewModel object
-        mWSClient.connect(new WSClient.WSLightClientListener() {
-            @Override
-            public void onLightsReceived(List<Light> lights) {
-                mView.setLights(lights);
-            }
-        });
+    @Override
+    public void onResume() {
+        super.onResume();
+
+        mWSClient.connect(view::setLights);
     }
 
-    @OnLifecycleEvent(Lifecycle.Event.ON_RESUME)
-    public void onAttach() {
-    }
+    @Override
+    public void onPause() {
+        super.onPause();
 
-    @OnLifecycleEvent(Lifecycle.Event.ON_PAUSE)
-    public void onDetach() {
-    }
-
-    @OnLifecycleEvent(Lifecycle.Event.ON_DESTROY)
-    public void onDestroy() {
-        //TODO: Release resources;
         mWSClient.disconnect();
     }
 }

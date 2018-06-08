@@ -6,24 +6,23 @@ import android.arch.lifecycle.LifecycleOwner;
 import android.arch.lifecycle.OnLifecycleEvent;
 import android.util.Log;
 
-import com.dicosta.gpioclient.api.LightWriteAction;
 import com.dicosta.gpioclient.ble.GattClient;
 import com.dicosta.gpioclient.contracts.DeviceView;
 import com.dicosta.gpioclient.domain.Light;
-import com.dicosta.gpioclient.domain.LightState;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
-import com.polidea.rxandroidble.RxBleConnection;
-import com.polidea.rxandroidble.RxBleDevice;
-import com.polidea.rxandroidble.helpers.ValueInterpreter;
+import com.polidea.rxandroidble2.RxBleConnection;
+import com.polidea.rxandroidble2.RxBleDevice;
+import com.polidea.rxandroidble2.helpers.ValueInterpreter;
+
+import org.reactivestreams.Subscription;
 
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-import rx.Subscription;
-import rx.subjects.PublishSubject;
+import io.reactivex.subjects.PublishSubject;
 
 /**
  * Created by diego on 24/01/18.
@@ -69,12 +68,12 @@ public class BLEDevicePresenter implements LifecycleObserver {
     }
 
     private void write(int id, String state) {
-        String payload = mGson.toJson(new LightWriteAction(id, state));
+        String payload = null;//= mGson.toJson(new LightWriteAction(id, state));
 
         mConnection
                 .writeCharacteristic(writeCharacteristic, payload.getBytes())
-                .takeUntil(disconnectTriggerSubject)
-                .first()
+                //.takeUntil(disconnectTriggerSubject)
+                //.first()
                 .subscribe(this::onWriteSuccessful, this::onWriteFailed);
     }
 
@@ -94,8 +93,8 @@ public class BLEDevicePresenter implements LifecycleObserver {
 
         connection
                 .readCharacteristic(readNotifyCharacteristic)
-                .takeUntil(disconnectTriggerSubject)
-                .first()
+                //.takeUntil(disconnectTriggerSubject)
+                //.first()
                 .subscribe(this::onReadReceived, this::onReadFailed);
 
         Log.d("GPIOCLIENT", "ATTEMPTING TO SUSCRIBE TO INDICATE");
@@ -153,7 +152,7 @@ public class BLEDevicePresenter implements LifecycleObserver {
 
         bleDevice.establishConnection(false)
             .takeUntil(disconnectTriggerSubject)
-            .doOnUnsubscribe(this::clearSubscription)
+            //.doOnUnsubscribe(this::clearSubscription)
             .subscribe(this::onConnectionReceived, this::onConnectionFailure);
     }
 

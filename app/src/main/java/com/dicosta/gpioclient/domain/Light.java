@@ -103,7 +103,7 @@ public class Light {
         return STATE_DIM.equals(state);
     }
 
-    public boolean isLighBlink() {
+    public boolean isLightBlink() {
         return STATE_BLINK.equals(state);
     }
 }

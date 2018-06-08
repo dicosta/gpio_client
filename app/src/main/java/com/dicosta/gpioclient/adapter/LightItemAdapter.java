@@ -1,5 +1,6 @@
 package com.dicosta.gpioclient.adapter;
 
+import android.support.v7.util.DiffUtil;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -34,10 +35,12 @@ public class LightItemAdapter extends RecyclerView.Adapter<RecyclerView.ViewHold
     private LightItemAdapterListener mListener;
 
     public void setItems(List<Light> items) {
+        DiffUtil.DiffResult diffResult = DiffUtil.calculateDiff(new LightItemDiffCallback(items, mItems));
+
         mItems.clear();
         mItems.addAll(items);
 
-        notifyDataSetChanged(); //use diff util
+        diffResult.dispatchUpdatesTo(this);
     }
 
     public void setLightItemAdapterListener(LightItemAdapterListener listener) {
@@ -49,26 +52,34 @@ public class LightItemAdapter extends RecyclerView.Adapter<RecyclerView.ViewHold
         View v = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_light, parent, false);
         LightItemViewHolder holder = new LightItemViewHolder(v, new ViewHolderListener() {
             @Override
-            public void switchButtonClicked(LightItemViewHolder vh) {
+            public void switchButtonClicked(int adapterPosition) {
                 if (mListener != null) {
-                    Light light = mItems.get(vh.getAdapterPosition());
+                    Light light = mItems.get(adapterPosition);
 
-                    if (light.isLightOff()) {
+                    if (light.isLightOff() || light.isLightBlink()) {
+                        light.setState(Light.STATE_ON);
+                        notifyItemChanged(adapterPosition);
                         mListener.onSwitchTurnOnClicked(light);
                     } else {
+                        light.setState(Light.STATE_OFF);
+                        notifyItemChanged(adapterPosition);
                         mListener.onSwitchTurnOffClicked(light);
                     }
                 }
             }
 
             @Override
-            public void blinkButtonClicked(LightItemViewHolder vh) {
+            public void blinkButtonClicked(int adapterPosition) {
                 if (mListener != null) {
-                    Light light = mItems.get(vh.getAdapterPosition());
+                    Light light = mItems.get(adapterPosition);
 
-                    if (light.isLighBlink()) {
+                    if (light.isLightBlink()) {
+                        light.setState(Light.STATE_OFF);
+                        notifyItemChanged(adapterPosition);
                         mListener.onStopBlinkClicked(light);
                     } else {
+                        light.setState(Light.STATE_BLINK);
+                        notifyItemChanged(adapterPosition);
                         mListener.onStartBlinkClicked(light);
                     }
                 }
@@ -82,12 +93,7 @@ public class LightItemAdapter extends RecyclerView.Adapter<RecyclerView.ViewHold
         Light currentLight = mItems.get(holder.getAdapterPosition());
 
         LightItemViewHolder viewHolder = (LightItemViewHolder)holder;
-
-        viewHolder.imgBulb.setSelected(currentLight.isLightOn() || currentLight.isLighBlink());
-        viewHolder.txtName.setText(currentLight.getName());
-
-        viewHolder.btnBlink.setText(currentLight.isLighBlink() ? R.string.stop_blink : R.string.start_blink);
-        viewHolder.btnSwitch.setText(currentLight.isLightOn() ? R.string.turn_off: R.string.turn_on);
+        viewHolder.bind(currentLight);
     }
 
     @Override
@@ -117,21 +123,29 @@ public class LightItemAdapter extends RecyclerView.Adapter<RecyclerView.ViewHold
             btnSwitch.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    viewHolderListener.switchButtonClicked(LightItemViewHolder.this);
+                    viewHolderListener.switchButtonClicked(getAdapterPosition());
                 }
             });
 
             btnBlink.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    viewHolderListener.blinkButtonClicked(LightItemViewHolder.this);
+                    viewHolderListener.blinkButtonClicked(getAdapterPosition());
                 }
             });
+        }
+
+        public void bind(Light light) {
+            txtName.setText(light.getName());
+            imgBulb.setSelected(light.isLightOn() || light.isLightBlink());
+
+            btnBlink.setText(light.isLightBlink() ? R.string.stop_blink : R.string.start_blink);
+            btnSwitch.setText(light.isLightOn() ? R.string.turn_off: R.string.turn_on);
         }
     }
 
     interface ViewHolderListener {
-        void switchButtonClicked(LightItemViewHolder vh);
-        void blinkButtonClicked(LightItemViewHolder vh);
+        void switchButtonClicked(int adapterPosition);
+        void blinkButtonClicked(int adapterPosition);
     }
 }

@@ -1,55 +1,58 @@
 package com.dicosta.gpioclient.presenter;
 
-import android.arch.lifecycle.Lifecycle;
-import android.arch.lifecycle.LifecycleObserver;
-import android.arch.lifecycle.LifecycleOwner;
-import android.arch.lifecycle.OnLifecycleEvent;
 import android.os.Handler;
-import android.util.Log;
-
-import com.dicosta.gpioclient.BuildConfig;
 import com.dicosta.gpioclient.api.LightAPI;
-import com.dicosta.gpioclient.contracts.LightsView;
 import com.dicosta.gpioclient.domain.Light;
 import com.dicosta.gpioclient.domain.LightState;
+import com.dicosta.gpioclient.net.HttpServiceFactory;
+import com.dicosta.gpioclient.view.HTTPView;
 
 import java.util.List;
+
+import javax.inject.Inject;
 
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.schedulers.Schedulers;
-import okhttp3.OkHttpClient;
-import okhttp3.logging.HttpLoggingInterceptor;
-import retrofit2.Retrofit;
-import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory;
-import retrofit2.converter.gson.GsonConverterFactory;
-
 /**
  * Created by diego on 19/01/18.
  */
 
-public class HTTPFragmentPresenter implements LifecycleObserver {
+public class HTTPFragmentPresenter extends BasePresenter<HTTPView> {
 
-    private int POLLING_FREQUENCY = 2000;
+    private final int POLLING_FREQUENCY = 2000;
     private Handler mHandler = new Handler();
-    private LightsView mView;
     private LightAPI mLightAPI;
-    private CompositeDisposable disposeBag;
+    private CompositeDisposable disposeBag = new CompositeDisposable();
 
-    public HTTPFragmentPresenter(LightsView view) {
-        mView = view;
-        disposeBag = new CompositeDisposable();
-        ((LifecycleOwner) view).getLifecycle().addObserver(this);
+    @Inject
+    HTTPFragmentPresenter(HTTPView view/*, HttpServiceFactory httpServiceFactory*/,LightAPI lightAPI) {
+        super(view);
+
+        mLightAPI = lightAPI;
+        //mLightAPI = httpServiceFactory.create(LightAPI.class);
     }
 
-    private void sendLightState(int pinNumber, LightState state) {
-        Disposable disposable = mLightAPI.writeLight(pinNumber, state)
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe();
+    @Override
+    public void onEnd() {
+        super.onEnd();
+        stopPolling();
+    }
 
-        disposeBag.add(disposable);
+    @Override
+    public void onPause() {
+        super.onPause();
+        stopPolling();
+
+        disposeBag.clear();
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+
+        startPolling();
     }
 
     public void turnLightOn(int pinNumber) {
@@ -76,64 +79,35 @@ public class HTTPFragmentPresenter implements LifecycleObserver {
         sendLightState(pinNumber, newState);
     }
 
-    @OnLifecycleEvent(Lifecycle.Event.ON_CREATE)
-    public void onCreate() {
-        HttpLoggingInterceptor logging = new HttpLoggingInterceptor();
-        logging.setLevel(HttpLoggingInterceptor.Level.BASIC);
-        OkHttpClient client = new OkHttpClient.Builder()
-                .addInterceptor(logging)
-                .build();
-
-        Retrofit retrofit = new Retrofit.Builder()
-                .client(client)
-                .baseUrl(BuildConfig.URL)
-                .addConverterFactory(GsonConverterFactory.create())
-                .addCallAdapterFactory(RxJava2CallAdapterFactory.create())
-                .build();
-        mLightAPI = retrofit.create(LightAPI.class);
-    }
-
-    @OnLifecycleEvent(Lifecycle.Event.ON_RESUME)
-    public void onAttach() {
-        startPolling();
-    }
-
-    @OnLifecycleEvent(Lifecycle.Event.ON_PAUSE)
-    public void onDetach() {
+    private void sendLightState(int pinNumber, LightState state) {
         stopPolling();
-        disposeBag.clear();
-    }
 
-    @OnLifecycleEvent(Lifecycle.Event.ON_DESTROY)
-    public void onDestroy() {
-        Log.d("LC", "DESTROY");
-        //TODO: Release resources;
-    }
+        Disposable disposable = mLightAPI.writeLight(pinNumber, state)
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(this::startPolling,
+                        error -> { startPolling(); handleError(error);});
 
-    private void handleReturnedData(List<Light> lightList) {
-        mView.setLights(lightList);
-        mHandler.postDelayed(getAllLightsFetchRunnable(), POLLING_FREQUENCY);
-    }
-
-    private void handleDataSent() {
-    }
-
-    private void handleError(Throwable error) {
+        disposeBag.add(disposable);
     }
 
     private Runnable getAllLightsFetchRunnable() {
-        return new Runnable() {
-            @Override
-            public void run() {
-                Disposable disposable = mLightAPI.getAllLights()
-                        .subscribeOn(Schedulers.io())
-                        .observeOn(AndroidSchedulers.mainThread())
-                        .subscribe(result -> handleReturnedData(result),
-                                error -> handleError(error));
+        return () -> {
+            Disposable disposable = mLightAPI.getAllLights()
+                    .subscribeOn(Schedulers.io())
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribe(this::handleReturnedData, this::handleError);
 
-                disposeBag.add(disposable);
-            }
+            disposeBag.add(disposable);
         };
+    }
+
+    private void handleReturnedData(List<Light> lightList) {
+        view.setLights(lightList);
+        mHandler.postDelayed(getAllLightsFetchRunnable(), POLLING_FREQUENCY);
+    }
+
+    private void handleError(Throwable error) {
     }
 
     private void startPolling() {

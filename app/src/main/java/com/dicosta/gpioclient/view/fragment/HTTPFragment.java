@@ -1,9 +1,8 @@
-package com.dicosta.gpioclient.view;
-
+package com.dicosta.gpioclient.view.fragment;
 
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.support.v4.app.Fragment;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
@@ -12,55 +11,39 @@ import android.view.ViewGroup;
 
 import com.dicosta.gpioclient.R;
 import com.dicosta.gpioclient.adapter.LightItemAdapter;
-import com.dicosta.gpioclient.contracts.LightsView;
 import com.dicosta.gpioclient.domain.Light;
 import com.dicosta.gpioclient.presenter.HTTPFragmentPresenter;
-import com.dicosta.gpioclient.presenter.WSFragmentPresenter;
+import com.dicosta.gpioclient.view.HTTPView;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import butterknife.BindView;
-import butterknife.ButterKnife;
-import butterknife.Unbinder;
 
-public class WSFragment extends Fragment implements LightsView{
+public class HTTPFragment extends BaseMVPFragment<HTTPFragmentPresenter> implements HTTPView {
 
     @BindView(R.id.lights_list)
     RecyclerView mLightsList;
 
-    private Unbinder mUnbinder;
     private LightItemAdapter mLightItemAdapter;
-    private WSFragmentPresenter mPresenter;
 
-    public WSFragment() {
+    public HTTPFragment() {
         // Required empty public constructor
     }
 
-    public static WSFragment newInstance() {
-        WSFragment fragment = new WSFragment();
-        return fragment;
+    public static HTTPFragment newInstance() {
+        return new HTTPFragment();
     }
 
     @Override
-    public void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-
-        mPresenter = new WSFragmentPresenter(this);
-    }
-
-    @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container,
+    public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.fragment_ws, container, false);
-        mUnbinder = ButterKnife.bind(this, view);
-
-        return view;
+        return inflater.inflate(R.layout.fragment_http, container, false);
     }
 
     @Override
-    public void onActivityCreated(@Nullable Bundle savedInstanceState) {
-        super.onActivityCreated(savedInstanceState);
+    public void onViewStateRestored(@Nullable Bundle savedInstanceState) {
+        super.onViewStateRestored(savedInstanceState);
 
         mLightItemAdapter = new LightItemAdapter();
 
@@ -72,40 +55,28 @@ public class WSFragment extends Fragment implements LightsView{
         mLightItemAdapter.setLightItemAdapterListener(new LightItemAdapter.LightItemAdapterListener() {
             @Override
             public void onSwitchTurnOnClicked(Light light) {
-                mPresenter.turnLightOn(light.getId());
+                presenter.turnLightOn(light.getId());
             }
 
             @Override
             public void onSwitchTurnOffClicked(Light light) {
-                mPresenter.turnLightOff(light.getId());
+                presenter.turnLightOff(light.getId());
             }
 
             @Override
             public void onStartBlinkClicked(Light light) {
-                mPresenter.startLightBlink(light.getId());
+                presenter.startLightBlink(light.getId());
             }
 
             @Override
             public void onStopBlinkClicked(Light light) {
-                mPresenter.stopLightBlink(light.getId());
+                presenter.stopLightBlink(light.getId());
             }
         });
-    }
-
-    @Override
-    public void onDestroyView() {
-        super.onDestroyView();
-
-        mUnbinder.unbind();
     }
 
     @Override
     public void setLights(List<Light> lightsList) {
-        getActivity().runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                mLightItemAdapter.setItems(lightsList);
-            }
-        });
+        mLightItemAdapter.setItems(lightsList);
     }
 }

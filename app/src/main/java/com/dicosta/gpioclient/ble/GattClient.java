@@ -1,8 +1,8 @@
 package com.dicosta.gpioclient.ble;
 
 import com.dicosta.gpioclient.GPIOApplication;
-import com.polidea.rxandroidble.RxBleClient;
-import com.polidea.rxandroidble.internal.RxBleLog;
+import com.polidea.rxandroidble2.RxBleClient;
+import com.polidea.rxandroidble2.internal.RxBleLog;
 
 /**
  * Created by diego on 22/01/18.
@@ -19,7 +19,7 @@ public class GattClient {
             throw new RuntimeException("Use getInstance() method to get the single instance of this class.");
         }
 
-        mRXBleClient = RxBleClient.create(GPIOApplication.getInstance());
+        //mRXBleClient = RxBleClient.create(GPIOApplication.getInstance());
 
         RxBleClient.setLogLevel(RxBleLog.VERBOSE);
     }

@@ -1,13 +1,9 @@
-package com.dicosta.gpioclient.contracts;
+package com.dicosta.gpioclient.view;
 
 import com.dicosta.gpioclient.domain.Light;
 
 import java.util.List;
 
-/**
- * Created by diego on 19/01/18.
- */
-
-public interface LightsView {
+public interface HTTPView extends MVPView {
     void setLights(List<Light> lightsList);
 }

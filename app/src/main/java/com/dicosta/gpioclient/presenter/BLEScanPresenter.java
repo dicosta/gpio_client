@@ -10,16 +10,17 @@ import android.util.Log;
 import com.dicosta.gpioclient.ble.GattClient;
 import com.dicosta.gpioclient.contracts.ScanView;
 import com.dicosta.gpioclient.viewmodel.ScanResultViewModel;
-import com.polidea.rxandroidble.exceptions.BleScanException;
-import com.polidea.rxandroidble.scan.ScanFilter;
-import com.polidea.rxandroidble.scan.ScanResult;
-import com.polidea.rxandroidble.scan.ScanSettings;
+import com.polidea.rxandroidble2.exceptions.BleScanException;
+import com.polidea.rxandroidble2.scan.ScanFilter;
+import com.polidea.rxandroidble2.scan.ScanResult;
+import com.polidea.rxandroidble2.scan.ScanSettings;
+
+import org.reactivestreams.Subscription;
 
 import java.util.Date;
 import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 
-import rx.Subscription;
 
 /**
  * Created by diego on 23/01/18.
@@ -40,12 +41,13 @@ public class BLEScanPresenter implements LifecycleObserver {
     @OnLifecycleEvent(Lifecycle.Event.ON_DESTROY)
     public void onDestroy() {
         if (mScanSubscription != null) {
-            mScanSubscription.unsubscribe();
+            //mScanSubscription.unsubscribe();
         }
     }
 
     public void startScan() {
         //NOTE: RXBleClient still stuck in RX1.x
+        /*
         mScanSubscription = GattClient.getRXClient().scanBleDevices(
                 new ScanSettings.Builder()
                         .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
@@ -55,6 +57,7 @@ public class BLEScanPresenter implements LifecycleObserver {
         .doOnUnsubscribe(() -> Log.d(TAG, "Unsuscribed From Scanner"))
         .subscribe(this::handleScanResultItem, this::handleScanError
         );
+        */
     }
 
     private void handleScanResultItem(ScanResult scanResult) {
