@@ -2,18 +2,15 @@ package com.dicosta.gpioclient.view.fragment;
 
 import android.os.Bundle;
 import android.support.annotation.Nullable;
-import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentTransaction;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
 import com.dicosta.gpioclient.R;
 import com.dicosta.gpioclient.contracts.BLEFlow;
-import com.dicosta.gpioclient.view.BLEDeviceFragment;
-import com.dicosta.gpioclient.view.BLEScanFragment;
 
-public class BLEFragment extends BaseFragment {
+
+public class BLEFragment extends BaseFragment implements BLEFlow{
 
     public BLEFragment() {
     }
@@ -39,21 +36,13 @@ public class BLEFragment extends BaseFragment {
         navigateToScan();
     }
 
+    @Override
     public void navigateToScan() {
         replaceChildFragment(R.id.ble_container, BLEScanFragment.newInstance());
-        /*
-        FragmentTransaction fragmentTransaction = getChildFragmentManager().beginTransaction();
-        fragmentTransaction.replace(R.id.ble_container, BLEScanFragment.newInstance());
-        fragmentTransaction.commit();
-        */
     }
 
-    /*
+    @Override
     public void navigateToLightsList(String macAddress) {
-        FragmentTransaction fragmentTransaction = getChildFragmentManager().beginTransaction();
-        fragmentTransaction.replace(R.id.ble_container, BLEDeviceFragment.newInstance(macAddress));
-        fragmentTransaction.commit();
-
+        replaceChildFragment(R.id.ble_container, BLEDeviceFragment.newInstance(macAddress));
     }
-    */
 }

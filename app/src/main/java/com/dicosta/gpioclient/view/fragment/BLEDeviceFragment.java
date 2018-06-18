@@ -1,8 +1,7 @@
-package com.dicosta.gpioclient.view;
+package com.dicosta.gpioclient.view.fragment;
 
 import android.os.Bundle;
 import android.support.annotation.Nullable;
-import android.support.v4.app.Fragment;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
@@ -11,10 +10,9 @@ import android.view.ViewGroup;
 
 import com.dicosta.gpioclient.R;
 import com.dicosta.gpioclient.adapter.LightItemAdapter;
-import com.dicosta.gpioclient.ble.GattClient;
-import com.dicosta.gpioclient.contracts.DeviceView;
 import com.dicosta.gpioclient.domain.Light;
 import com.dicosta.gpioclient.presenter.BLEDevicePresenter;
+import com.dicosta.gpioclient.view.BLEDeviceView;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -26,13 +24,11 @@ import butterknife.Unbinder;
 /**
  * Created by diego on 24/01/18.
  */
-
-public class BLEDeviceFragment extends Fragment implements DeviceView {
+public class BLEDeviceFragment extends BaseMVPFragment<BLEDevicePresenter> implements BLEDeviceView {
 
     public static final String EXTRA_DEVICE_MAC_ADDRESS = "com.dicosta.gpioclient.view.device_mac_address";
 
     private Unbinder mUnbinder;
-    private BLEDevicePresenter mBLEDevicePresenter;
 
     @BindView(R.id.lights_list)
     RecyclerView mLightsList;
@@ -48,13 +44,6 @@ public class BLEDeviceFragment extends Fragment implements DeviceView {
         arguments.putString(EXTRA_DEVICE_MAC_ADDRESS, macAddress);
         fragment.setArguments(arguments);
         return fragment;
-    }
-
-    @Override
-    public void onCreate(@Nullable Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-
-        mBLEDevicePresenter = new BLEDevicePresenter(this);
     }
 
     @Override
@@ -77,7 +66,7 @@ public class BLEDeviceFragment extends Fragment implements DeviceView {
         super.onActivityCreated(savedInstanceState);
 
         if (getArguments() != null && getArguments().containsKey(EXTRA_DEVICE_MAC_ADDRESS)) {
-            mBLEDevicePresenter.connectToDevice(getArguments().getString(EXTRA_DEVICE_MAC_ADDRESS));
+            presenter.connectToDevice(getArguments().getString(EXTRA_DEVICE_MAC_ADDRESS));
         }
 
         mLightItemAdapter = new LightItemAdapter();
@@ -90,22 +79,22 @@ public class BLEDeviceFragment extends Fragment implements DeviceView {
         mLightItemAdapter.setLightItemAdapterListener(new LightItemAdapter.LightItemAdapterListener() {
             @Override
             public void onSwitchTurnOnClicked(Light light) {
-                mBLEDevicePresenter.turnOn(light);
+                presenter.turnOn(light);
             }
 
             @Override
             public void onSwitchTurnOffClicked(Light light) {
-                mBLEDevicePresenter.turnOff(light);
+                presenter.turnOff(light);
             }
 
             @Override
             public void onStartBlinkClicked(Light light) {
-                mBLEDevicePresenter.startBlink(light);
+                presenter.startBlink(light);
             }
 
             @Override
             public void onStopBlinkClicked(Light light) {
-                mBLEDevicePresenter.stopBlink(light);
+                presenter.stopBlink(light);
             }
         });
     }

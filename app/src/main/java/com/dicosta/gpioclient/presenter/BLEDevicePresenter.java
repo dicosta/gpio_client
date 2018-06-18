@@ -1,19 +1,20 @@
 package com.dicosta.gpioclient.presenter;
 
 import android.arch.lifecycle.Lifecycle;
-import android.arch.lifecycle.LifecycleObserver;
-import android.arch.lifecycle.LifecycleOwner;
 import android.arch.lifecycle.OnLifecycleEvent;
 import android.util.Log;
 
 import com.dicosta.gpioclient.ble.GattClient;
-import com.dicosta.gpioclient.contracts.DeviceView;
 import com.dicosta.gpioclient.domain.Light;
+import com.dicosta.gpioclient.net.SerializerProvider;
+import com.dicosta.gpioclient.view.BLEDeviceView;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
+import com.polidea.rxandroidble2.RxBleClient;
 import com.polidea.rxandroidble2.RxBleConnection;
 import com.polidea.rxandroidble2.RxBleDevice;
 import com.polidea.rxandroidble2.helpers.ValueInterpreter;
+import com.polidea.rxandroidble2.internal.RxBleDeviceProvider;
 
 import org.reactivestreams.Subscription;
 
@@ -22,29 +23,45 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import javax.inject.Inject;
+
+import io.reactivex.disposables.CompositeDisposable;
+import io.reactivex.disposables.Disposable;
 import io.reactivex.subjects.PublishSubject;
 
 /**
  * Created by diego on 24/01/18.
  */
 
-public class BLEDevicePresenter implements LifecycleObserver {
+public class BLEDevicePresenter extends BasePresenter<BLEDeviceView> {
 
     private PublishSubject<Void> disconnectTriggerSubject = PublishSubject.create();
 
-    private DeviceView mView;
     private RxBleConnection mConnection;
     private Subscription mIndicationSuscription;
-    private Gson mGson = new Gson();
+
 
     private final UUID readNotifyCharacteristic = UUID.fromString("13333333-3333-3333-3333-333333330002");
     private final UUID writeCharacteristic = UUID.fromString("13333333-3333-3333-3333-333333330003");
 
     private StringBuilder mIndicationMessageBuilder = new StringBuilder();
 
-    public BLEDevicePresenter(DeviceView view) {
-        mView = view;
-        ((LifecycleOwner) view).getLifecycle().addObserver(this);
+    private final RxBleClient mRxBleClient;
+    private final Gson mGson;
+    private final CompositeDisposable compositeDisposable = new CompositeDisposable();
+
+    @Inject
+    BLEDevicePresenter(BLEDeviceView view, GattClient gattClient, SerializerProvider serializerProvider) {
+        super(view);
+
+        mRxBleClient = gattClient.getRXBleClient();
+        mGson = serializerProvider.getGson();
+    }
+
+    @Override
+    public void onEnd() {
+        super.onEnd();
+        compositeDisposable.clear();
     }
 
     private void onConnectionFailure(Throwable throwable) {
@@ -70,11 +87,13 @@ public class BLEDevicePresenter implements LifecycleObserver {
     private void write(int id, String state) {
         String payload = null;//= mGson.toJson(new LightWriteAction(id, state));
 
-        mConnection
+        Disposable writeDisposable = mConnection
                 .writeCharacteristic(writeCharacteristic, payload.getBytes())
                 //.takeUntil(disconnectTriggerSubject)
                 //.first()
                 .subscribe(this::onWriteSuccessful, this::onWriteFailed);
+
+        compositeDisposable.add(writeDisposable);
     }
 
     private void onWriteSuccessful(byte[] bytesWritten) {
@@ -91,25 +110,29 @@ public class BLEDevicePresenter implements LifecycleObserver {
 
         mConnection = connection;
 
-        connection
+        Disposable readDisposable = connection
                 .readCharacteristic(readNotifyCharacteristic)
                 //.takeUntil(disconnectTriggerSubject)
                 //.first()
                 .subscribe(this::onReadReceived, this::onReadFailed);
 
+        compositeDisposable.add(readDisposable);
+
         Log.d("GPIOCLIENT", "ATTEMPTING TO SUSCRIBE TO INDICATE");
 
-        connection
+        Disposable setupIndicationDisposable = connection
                 .setupIndication(readNotifyCharacteristic)
                 .takeUntil(disconnectTriggerSubject)
                 .flatMap(notificationObservable -> notificationObservable)
                 .subscribe(this::onIndicationReceived, this::onIndicationSetupFailure);
+
+        compositeDisposable.add(setupIndicationDisposable);
     }
 
     private void onReadReceived(byte[] bytes) {
         Type listType = new TypeToken<ArrayList<Light>>(){}.getType();
         List<Light> retList = mGson.fromJson(ValueInterpreter.getStringValue(bytes, 0), listType);
-        mView.setLights(retList);
+        view.setLights(retList);
     }
 
     private void onReadFailed(Throwable throwable) {
@@ -126,7 +149,7 @@ public class BLEDevicePresenter implements LifecycleObserver {
 
             Type listType = new TypeToken<ArrayList<Light>>(){}.getType();
             List<Light> retList = mGson.fromJson(mIndicationMessageBuilder.toString(), listType);
-            mView.setLights(retList);
+            view.setLights(retList);
 
             mIndicationMessageBuilder = new StringBuilder();
         } else {
@@ -148,12 +171,13 @@ public class BLEDevicePresenter implements LifecycleObserver {
     }
 
     public void connectToDevice(String macAddress) {
-        RxBleDevice bleDevice = GattClient.getRXClient().getBleDevice(macAddress);
+        RxBleDevice bleDevice = mRxBleClient.getBleDevice(macAddress);
 
-        bleDevice.establishConnection(false)
-            .takeUntil(disconnectTriggerSubject)
-            //.doOnUnsubscribe(this::clearSubscription)
-            .subscribe(this::onConnectionReceived, this::onConnectionFailure);
+        Disposable connectionDisposable = bleDevice.establishConnection(false)
+                .takeUntil(disconnectTriggerSubject)
+                .subscribe(this::onConnectionReceived, this::onConnectionFailure);
+
+        compositeDisposable.add(connectionDisposable);
     }
 
     private void triggerDisconnect() {

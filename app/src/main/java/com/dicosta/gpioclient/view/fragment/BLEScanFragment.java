@@ -1,14 +1,12 @@
-package com.dicosta.gpioclient.view;
+package com.dicosta.gpioclient.view.fragment;
 
 import android.Manifest;
 import android.bluetooth.BluetoothAdapter;
-import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.support.v4.app.Fragment;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.widget.ContentLoadingProgressBar;
 import android.support.v7.app.AlertDialog;
@@ -23,8 +21,8 @@ import android.widget.Toast;
 import com.dicosta.gpioclient.R;
 import com.dicosta.gpioclient.adapter.ScanResultAdapter;
 import com.dicosta.gpioclient.contracts.BLEFlow;
-import com.dicosta.gpioclient.contracts.ScanView;
 import com.dicosta.gpioclient.presenter.BLEScanPresenter;
+import com.dicosta.gpioclient.view.BLEScanView;
 import com.dicosta.gpioclient.viewmodel.ScanResultViewModel;
 
 import butterknife.BindView;
@@ -38,7 +36,7 @@ import static android.app.Activity.RESULT_OK;
  * Created by diego on 22/01/18.
  */
 
-public class BLEScanFragment extends Fragment implements ScanView {
+public class BLEScanFragment extends BaseMVPFragment<BLEScanPresenter> implements BLEScanView {
 
     public static final int LOCATION_PERMISSION_REQUEST = 99;
     public static final int ENABLE_BT_REQUEST = 98;
@@ -51,7 +49,6 @@ public class BLEScanFragment extends Fragment implements ScanView {
     RecyclerView scanResultList;
 
     private Unbinder mUnbinder;
-    private BLEScanPresenter mBLEScanPresenter;
     private ScanResultAdapter mAdapter;
     private BLEFlow mBLEFlow;
 
@@ -59,8 +56,7 @@ public class BLEScanFragment extends Fragment implements ScanView {
     }
 
     public static BLEScanFragment newInstance() {
-        BLEScanFragment fragment = new BLEScanFragment();
-        return fragment;
+        return new BLEScanFragment();
     }
 
     @Override
@@ -70,8 +66,6 @@ public class BLEScanFragment extends Fragment implements ScanView {
         if (getParentFragment() != null && getParentFragment() instanceof BLEFlow) {
             mBLEFlow = (BLEFlow)getParentFragment();
         }
-
-        mBLEScanPresenter = new BLEScanPresenter(this);
     }
 
     @Override
@@ -91,20 +85,19 @@ public class BLEScanFragment extends Fragment implements ScanView {
         scanResultList.setLayoutManager(new LinearLayoutManager(getContext()));
         scanResultList.setAdapter(mAdapter);
 
-        mAdapter.setOnScanResultClickListener(macAddress -> {
-            mBLEFlow.navigateToLightsList(macAddress);
-        });
+        mAdapter.setOnScanResultClickListener(macAddress -> mBLEFlow.navigateToLightsList(macAddress));
     }
 
     @Override
     public void onDestroyView() {
         super.onDestroyView();
+
         mUnbinder.unbind();
     }
 
     @OnClick(R.id.scan_button)
     public void scanButtonClicked(View view) {
-        mBLEScanPresenter.startScan();
+        presenter.startScan();
 
         scanButton.setVisibility(View.GONE);
         scanProgressBar.show();
@@ -137,7 +130,6 @@ public class BLEScanFragment extends Fragment implements ScanView {
     @Override
     public void requestLocationPermission() {
         if (shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_FINE_LOCATION)) {
-
             new AlertDialog.Builder(getActivity())
                     .setTitle(R.string.title_location_permission)
                     .setMessage(R.string.text_location_permission)
@@ -170,13 +162,12 @@ public class BLEScanFragment extends Fragment implements ScanView {
                     if (ContextCompat.checkSelfPermission(getActivity(),
                             Manifest.permission.ACCESS_FINE_LOCATION)
                             == PackageManager.PERMISSION_GRANTED) {
-                        mBLEScanPresenter.startScan();
+                        presenter.startScan();
                     }
                 } else {
                     scanButton.setVisibility(View.VISIBLE);
                     scanProgressBar.hide();
                 }
-                return;
             }
         }
     }
@@ -184,7 +175,7 @@ public class BLEScanFragment extends Fragment implements ScanView {
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == ENABLE_BT_REQUEST && resultCode == RESULT_OK) {
-            mBLEScanPresenter.startScan();
+            presenter.startScan();
         }
     }
 }

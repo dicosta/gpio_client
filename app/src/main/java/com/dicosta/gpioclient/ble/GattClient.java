@@ -4,15 +4,27 @@ import com.dicosta.gpioclient.GPIOApplication;
 import com.polidea.rxandroidble2.RxBleClient;
 import com.polidea.rxandroidble2.internal.RxBleLog;
 
+import javax.inject.Inject;
+import javax.inject.Singleton;
+
 /**
  * Created by diego on 22/01/18.
  */
 
-public class GattClient {
+@Singleton
+public final class GattClient {
 
     private static volatile GattClient INSTANCE;
     private RxBleClient mRXBleClient;
 
+    @Inject
+    GattClient(GPIOApplication gpioApplication) {
+        //this.application = application;
+        mRXBleClient = RxBleClient.create(gpioApplication);
+        RxBleClient.setLogLevel(RxBleLog.VERBOSE);
+    }
+
+    /*
     private GattClient(){
 
         if (INSTANCE != null){
@@ -38,5 +50,10 @@ public class GattClient {
 
     public static RxBleClient getRXClient() {
         return getInstance().mRXBleClient;
+    }
+    */
+
+    public RxBleClient getRXBleClient() {
+        return mRXBleClient;
     }
 }

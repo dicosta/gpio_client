@@ -1,67 +1,62 @@
 package com.dicosta.gpioclient.presenter;
 
-import android.arch.lifecycle.Lifecycle;
-import android.arch.lifecycle.LifecycleObserver;
-import android.arch.lifecycle.LifecycleOwner;
-import android.arch.lifecycle.OnLifecycleEvent;
 import android.text.TextUtils;
 import android.util.Log;
 
 import com.dicosta.gpioclient.ble.GattClient;
-import com.dicosta.gpioclient.contracts.ScanView;
+import com.dicosta.gpioclient.view.BLEScanView;
 import com.dicosta.gpioclient.viewmodel.ScanResultViewModel;
+import com.polidea.rxandroidble2.RxBleClient;
 import com.polidea.rxandroidble2.exceptions.BleScanException;
 import com.polidea.rxandroidble2.scan.ScanFilter;
 import com.polidea.rxandroidble2.scan.ScanResult;
 import com.polidea.rxandroidble2.scan.ScanSettings;
 
-import org.reactivestreams.Subscription;
-
 import java.util.Date;
 import java.util.Locale;
 import java.util.concurrent.TimeUnit;
+
+import javax.inject.Inject;
+
+import io.reactivex.disposables.CompositeDisposable;
+import io.reactivex.disposables.Disposable;
 
 
 /**
  * Created by diego on 23/01/18.
  */
-
-public class BLEScanPresenter implements LifecycleObserver {
+public class BLEScanPresenter extends BasePresenter<BLEScanView> {
 
     static final String TAG = BLEScanPresenter.class.getSimpleName();
 
-    private ScanView mView;
-    private Subscription mScanSubscription;
+    private RxBleClient mRxBleClient;
+    private CompositeDisposable compositeDisposable = new CompositeDisposable();
 
-    public BLEScanPresenter(ScanView view) {
-        mView = view;
-        ((LifecycleOwner) view).getLifecycle().addObserver(this);
+    @Inject
+    BLEScanPresenter(BLEScanView view, GattClient gattClient) {
+        super(view);
+        mRxBleClient = gattClient.getRXBleClient();
     }
 
-    @OnLifecycleEvent(Lifecycle.Event.ON_DESTROY)
-    public void onDestroy() {
-        if (mScanSubscription != null) {
-            //mScanSubscription.unsubscribe();
-        }
+    @Override
+    public void onEnd() {
+        super.onEnd();
+        compositeDisposable.clear();
     }
 
     public void startScan() {
-        //NOTE: RXBleClient still stuck in RX1.x
-        /*
-        mScanSubscription = GattClient.getRXClient().scanBleDevices(
+        Disposable scanSubscription = mRxBleClient.scanBleDevices(
                 new ScanSettings.Builder()
                         .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
                         .setCallbackType(ScanSettings.CALLBACK_TYPE_ALL_MATCHES)
                         .build(),
-                ScanFilter.empty())
-        .doOnUnsubscribe(() -> Log.d(TAG, "Unsuscribed From Scanner"))
-        .subscribe(this::handleScanResultItem, this::handleScanError
-        );
-        */
+                    ScanFilter.empty())
+                .subscribe(this::handleScanResultItem, this::handleScanError);
+        compositeDisposable.add(scanSubscription);
     }
 
     private void handleScanResultItem(ScanResult scanResult) {
-        mView.addScanResult(new ScanResultViewModel.Builder()
+        view.addScanResult(new ScanResultViewModel.Builder()
                 .setMacAddress(scanResult.getBleDevice().getMacAddress())
                 .setName(scanResult.getBleDevice().getName())
                 .setRssi(scanResult.getRssi())
@@ -80,11 +75,11 @@ public class BLEScanPresenter implements LifecycleObserver {
                     break;
                 case BleScanException.BLUETOOTH_DISABLED:
                     text = "Enable bluetooth and try again";
-                    mView.requestEnableBluetooth();
+                    view.requestEnableBluetooth();
                     break;
                 case BleScanException.LOCATION_PERMISSION_MISSING:
                     text = null;
-                    mView.requestLocationPermission();
+                    view.requestLocationPermission();
                     break;
                 case BleScanException.LOCATION_SERVICES_DISABLED:
                     text = "Location services needs to be enabled on Android 6.0";
@@ -120,7 +115,7 @@ public class BLEScanPresenter implements LifecycleObserver {
 
             if (!TextUtils.isEmpty(text)) {
                 Log.w("EXCEPTION", text, bleScanException);
-                mView.showScanError(text);
+                view.showScanError(text);
             }
         }
     }
